@@ -1,0 +1,62 @@
+name: Frontend
+
+# on: 
+#     pull_request:
+#         branches:
+#             - main
+on: workflow_dispatch
+
+env:
+  DOCKER_IMAGE_NAME: frontend
+  FILE_PATH_DOCKER: ./Application-Code/frontend/Dockerfile
+  FILE_PATH_KUBE: ./Kubernetes-Manifests-file/Frontend/deployment.yaml
+jobs:
+    sonarqube:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Git Checkout
+              uses: actions/checkout@v4
+              with:
+                 fetch-depth: 0
+            - name: Sonarqube scan
+              uses: SonarSource/sonarcloud-github-action@master
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    docker:
+        needs: sonarqube
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Git Checkout
+              uses: actions/checkout@v4
+            - name: Docker login
+              env:
+                DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+                DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+              run: |
+                docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+              shell: bash
+            - name: docker Build & push
+              uses: ./.github/actions/docker
+              with:
+                docker_user_name: ${{ secrets.DOCKER_USERNAME }}
+                docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
+                file_path: ${{ env.FILE_PATH_DOCKER }}
+    Kubernetes:
+      needs: docker
+      runs-on: ubuntu-22.04
+      steps:
+        - name: Git Checkout
+          uses: actions/checkout@v4
+        - name: Kubernetes image change
+          uses: ./.github/actions/kubernetes
+          with:
+            docker_user_name: ${{ secrets.DOCKER_USERNAME }}
+            docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
+            file_path: ${{ env.FILE_PATH_KUBE }}
+        - name: Push changes
+          uses: ad-m/github-push-action@master
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            branch: main
+
+    

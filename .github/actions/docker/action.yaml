@@ -1,0 +1,37 @@
+name: Docker build and Push
+description: It will build and push 
+inputs:
+  docker_user_name:
+    description: docker username 
+    required: true
+  docker_image_name:
+    description: docker image name
+    required: true
+  file_path:
+    description: It will discribe the file path
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Docker build
+      env:
+        USERNAME: ${{ inputs.docker_user_name }}
+        DOCKERNAME: ${{ inputs.docker_image_name }}
+        FILE_PATH: ${{ inputs.file_path }}
+      run: |
+        docker build -t $USERNAME/$DOCKERNAME:{{ github.run_number }} -f $FILE_PATH
+      shell: bash
+
+    - name: Aqua Security Trivy
+      uses: aquasecurity/trivy-action@0.11.2
+      with:
+        image-ref: '$USERNAME/$DOCKERNAME:{{ github.run_number }}'
+        format: 'json'
+        exit-code: '0'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+    
+    - name: Docker Image Push
+      run: |
+        docker push $USERNAME/$DOCKERNAME:{{ github.run_number }}
+      shell: bash

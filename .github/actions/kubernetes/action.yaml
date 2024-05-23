@@ -1,0 +1,29 @@
+name: kubernetes
+description: k8s file changing and deployment
+inputs:
+  docker_user_name:
+    description: docker username 
+    required: true
+  docker_image_name:
+    description: docker image name
+    required: true
+  file_path:
+    description: It will discribe the file path
+    required: true
+runs:
+  using: composite
+  steps: 
+    - name: Change image name in source file
+      env:
+        USERNAME: ${{ inputs.docker_user_name }}
+        DOCKERNAME: ${{ inputs.docker_image_name }}
+        FILE_PATH: ${{ inputs.file_path }}
+      run: | 
+        sed -i "s|$USERNAME/DOCKERNAME:*|$USERNAME/DOCKERNAME:{{ .github.run_number }}|" $FILE_PATH
+      shell: bash
+    - name: Git commits
+      run: |
+        git config --local user.email "reemusjanus1232@gmai.com"
+        git config --local user.name "ReemusJanus"
+        git commit -a -m "Image version is #{{ .github.run_number}}"
+      shell: bash
