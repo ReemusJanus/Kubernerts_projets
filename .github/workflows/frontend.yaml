@@ -20,8 +20,9 @@ jobs:
                  fetch-depth: 0
             - name: Sonarqube scan
               uses: SonarSource/sonarcloud-github-action@master
-              env:
+              with:
                 SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                propertiesFile: ./frontend.properties
     docker:
         needs: sonarqube
         runs-on: ubuntu-22.04

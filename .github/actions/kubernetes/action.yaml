@@ -23,7 +23,7 @@ runs:
       shell: bash
     - name: Git commits
       run: |
-        git config --local user.email "reemusjanus1232@gmai.com"
+        git config --local user.email "reemusjanus1232@gmail.com"
         git config --local user.name "ReemusJanus"
         git commit -a -m "Image version is #{{ .github.run_number}}"
       shell: bash
